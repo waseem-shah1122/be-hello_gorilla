@@ -1,11 +1,11 @@
 package com.rtechnologies.hello_gorilla.controller;
 
 
+import com.rtechnologies.hello_gorilla.dto.ResponseMessage;
 import com.rtechnologies.hello_gorilla.entity.UserEntity;
 import com.rtechnologies.hello_gorilla.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -28,7 +28,7 @@ public class UserController {
 
 
     @PostMapping("/signup")
-    public ResponseEntity<String> signUpUser(MultipartHttpServletRequest request) {
+    public ResponseEntity<ResponseMessage> signUpUser(MultipartHttpServletRequest request) {
         try {
             // Extract parameters from the request
             String number = request.getParameter("number");
@@ -57,24 +57,20 @@ public class UserController {
 
             try {
                 userService.createUser(userEntity, profileImage, idDocumentData);
-                System.out.println("userId:" + userEntity.getUserId());
 
-                return ResponseEntity.status(HttpStatus.CREATED).body("User signed up successfully");
+                return ResponseEntity.ok(new ResponseMessage(true, "User signed up successfully"));
             } catch (IOException e) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to sign up user");
+                return ResponseEntity.ok(new ResponseMessage(false, "Failed to sign up user"));
             }
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid request");
+            return  ResponseEntity.ok(new ResponseMessage(false, "number already exist"));
         }
     }
 
     @PostMapping("/signin")
-    public ResponseEntity<?> signIn(@RequestParam String number) {
-        ResponseEntity<String> userEntity = userService.logIn(number);
-//        if (userEntity == null) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("UID not found. Please sign up first.");
-//        }
-        return ResponseEntity.ok(userEntity);
+    public ResponseEntity<ResponseMessage> signIn(@RequestParam String number) {
+        userService.logIn(number);
+        return ResponseEntity.ok(new ResponseMessage(true, "User signed up successfully"));
     }
     @GetMapping
     public ResponseEntity<?> getUsers(@RequestParam(required = false) Long userId) {
@@ -92,19 +88,19 @@ public class UserController {
 
 
     @GetMapping("/nearby")
-    public ResponseEntity<List<UserEntity>> findUsersWithinRadius(@RequestParam Double latitude, @RequestParam Double longitude) {
+    public ResponseEntity<ResponseMessage> findUsersWithinRadius(@RequestParam Double latitude, @RequestParam Double longitude) {
         List<UserEntity> users = userService.findUsersWithinRadius(latitude, longitude);
         if (users.isEmpty()) {
             logger.info("No users found within the specified radius");
-            return ResponseEntity.noContent().build();
+            return  ResponseEntity.ok(new ResponseMessage(false,"No User"));
         } else {
             logger.info("Found {} users within the specified radius", users.size());
-            return ResponseEntity.ok(users);
+            return ResponseEntity.ok(new ResponseMessage(true, "Users found"));
         }
     }
 
     @GetMapping("/filter")
-    public ResponseEntity<List<UserEntity>> filterUsers(
+    public ResponseEntity<ResponseMessage> filterUsers(
             @RequestParam Optional<String> name,
             @RequestParam Optional<String> gender,
             @RequestParam Optional<String> interest,
@@ -119,10 +115,10 @@ public class UserController {
         List<UserEntity> users = userService.filterUsers(name, gender, interest, latitude, longitude, radius);
         if (users.isEmpty()) {
             logger.info("No users found within the specified criteria");
-            return ResponseEntity.noContent().build();
+            return ResponseEntity.ok(new ResponseMessage(false, "Users not found"));
         } else {
             logger.info("Found {} users within the specified criteria", users.size());
-            return ResponseEntity.ok(users);
+            return ResponseEntity.ok(new ResponseMessage(true, "Users found"));
         }
     }
 }

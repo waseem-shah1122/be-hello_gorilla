@@ -5,6 +5,7 @@ package com.rtechnologies.hello_gorilla.service;
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
 import com.rtechnologies.hello_gorilla.controller.UserController;
+import com.rtechnologies.hello_gorilla.dto.ResponseMessage;
 import com.rtechnologies.hello_gorilla.entity.UserEntity;
 import com.rtechnologies.hello_gorilla.repository.UserRepository;
 import org.modelmapper.ModelMapper;
@@ -45,7 +46,7 @@ public class UserService {
             String publicId = folder + "/" + profileImage.getOriginalFilename();
             Map uploadResult = cloudinary.uploader().upload(profileImage.getBytes(), ObjectUtils.asMap("public_id", publicId));
             String profilePicUrl = uploadResult.get("secure_url").toString();
-            user.setProfileImage(profilePicUrl);  // Store the URL instead of base64 encoded string
+            user.setProfileImage(profilePicUrl);
         }
 
         if (idDocument != null && !idDocument.isEmpty()) {
@@ -53,17 +54,22 @@ public class UserService {
             String publicId = folder + "/" + idDocument.getOriginalFilename();
             Map uploadResult = cloudinary.uploader().upload(idDocument.getBytes(), ObjectUtils.asMap("public_id", publicId));
             String profilePicUrl = uploadResult.get("secure_url").toString();
-            user.setDocument(profilePicUrl);  // Store the URL instead of base64 encoded string
+            user.setDocument(profilePicUrl);
         }
 
-        // Save the user entity to the database
         return userRepository.save(user);
     }
 
 
-    public ResponseEntity<String> logIn(String number) {
-        userRepository.findByNumber(number);
-        return ResponseEntity.status(HttpStatus.OK).body("User loged In successfully");
+    public ResponseEntity<ResponseMessage>logIn(String number) {
+
+
+        Optional<UserEntity> userEntityOptional = Optional.ofNullable(userRepository.findByNumber(number));
+
+//        if (!userEntityOptional.isPresent()) {
+//            return ResponseEntity.ok(new ResponseMessage(false, "invalid number"));
+//        }
+        return ResponseEntity.ok(new ResponseMessage(true, "User logged In successfully"));
 
     }
 
